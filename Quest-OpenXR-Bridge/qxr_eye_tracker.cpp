@@ -17,7 +17,6 @@ XrResult qxrCreateEyeTracker(XrInstance instance, XrSystemId systemId, XrSession
     printf("\nGetting ET properties from system: \n");
 
     XrSystemEyeTrackingPropertiesFB etProp = { XR_TYPE_SYSTEM_EYE_TRACKING_PROPERTIES_FB };
-    etProp.supportsEyeTracking = true;
 
     PFN_xrGetSystemProperties pfnGetSystemProperties;
     XrResult result = xrGetInstanceProcAddr(instance, "xrGetSystemProperties", (PFN_xrVoidFunction*)&pfnGetSystemProperties);

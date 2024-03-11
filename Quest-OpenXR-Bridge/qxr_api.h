@@ -9,26 +9,42 @@
 #include "qxr_face_tracker.h"
 #include <stdio.h>
 
+enum qxrResult {
+	SUCCESS,
+	RUNTIME_MISSING,
+	RUNTIME_FAILURE,
+	RUNTIME_FEATURE_UNAVAILABLE,
+	INSTANCE_CREATE_FAILURE,
+	SESSION_CREATE_FAILURE,
+	GRAPHICS_BIND_FAILURE,
+	SYSTEM_GET_FAILURE,
+	PROPERTY_GET_FAILURE,
+	SPACE_CREATE_FAILURE,
+	STEREO_VIEW_UNSUPPORTED
+};
+
 struct FaceWeightsFB {
 	float weights[XR_FACE_EXPRESSION2_COUNT_FB];
 	float confidences[XR_FACE_CONFIDENCE2_COUNT_FB];
+	XrTime time;
 };
 
 struct EyeGazesFB {
 	XrPosef gaze[2];
+	XrTime time;
 };
 
 extern "C" {
-	__declspec(dllexport) int InitializeSession();
-	__declspec(dllexport) int CloseSession();
+	__declspec(dllexport) qxrResult InitializeSession();
+	__declspec(dllexport) bool CloseSession();
 
-	__declspec(dllexport) int CreateFaceTracker();
-	__declspec(dllexport) int DestroyFaceTracker();
-	__declspec(dllexport) int GetFaceData(FaceWeightsFB *expressions);
+	__declspec(dllexport) bool CreateFaceTracker();
+	__declspec(dllexport) bool DestroyFaceTracker();
+	__declspec(dllexport) bool GetFaceData(FaceWeightsFB *expressions);
 
-	__declspec(dllexport) int CreateEyeTracker();
-	__declspec(dllexport) int DestroyEyeTracker();
-	__declspec(dllexport) int GetEyeData(EyeGazesFB *gazes); 
+	__declspec(dllexport) bool CreateEyeTracker();
+	__declspec(dllexport) bool DestroyEyeTracker();
+	__declspec(dllexport) bool GetEyeData(EyeGazesFB *gazes); 
 }
 
 #endif

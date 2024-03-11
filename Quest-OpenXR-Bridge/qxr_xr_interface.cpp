@@ -4,8 +4,6 @@
 #define XR_USE_PLATFORM_WIN32
 
 #include "qxr_graphics.h"
-#include "qxr_face_tracker.h"
-#include "qxr_eye_tracker.h"
 #include "qxr_xr_interface.h"
 
 #include <openxr/openxr.h>
@@ -16,17 +14,9 @@
 #include <iostream>
 #include <vector>
 #include <iterator>
-
+#include <string>
+#include "qxr_api.h"
 using namespace std;
-
-bool qIsExtensionSupported(const std::vector<XrExtensionProperties>& availableExtensions, const char* extensionName) {
-    for (const auto& extension : availableExtensions) {
-        if (strcmp(extension.extensionName, extensionName) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
 
 XrInstance instance;
 XrSystemId systemId;
@@ -34,41 +24,64 @@ XrViewConfigurationType viewConfiguration = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_S
 XrSession session;
 XrSpace worldSpace;
 
-int CreateXrSession() {
+qxrResult CreateXrSession() {
 
     uint32_t extensionsCount = 0;
     if (xrEnumerateInstanceExtensionProperties(nullptr, 0, &extensionsCount, nullptr) != XR_SUCCESS) {
-        // If it fails this early that means there's no runtime installed
-        return 4;
+        return RUNTIME_MISSING;
     }
 
     vector<XrExtensionProperties> properties(extensionsCount, { XR_TYPE_EXTENSION_PROPERTIES });
     if (xrEnumerateInstanceExtensionProperties(nullptr, extensionsCount, &extensionsCount, properties.data()) != XR_SUCCESS) {
-        // Failed to enumerate instance extension properties
-        return 3;
+        return PROPERTY_GET_FAILURE;
     }
 
-    vector<string> AvailableExtensions; // Declare and initialize the set to store available extensions
+    vector<char*> extensions; // Declare and initialize the set to store available extensions
 
-    // Populate set with available extensions
-    for (const XrExtensionProperties& prop : properties) {
-        AvailableExtensions.push_back(prop.extensionName);
-    }
-
-    // Check if required extensions are supported
-    vector<const char*> requiredExtensions {
+    vector<string> supportedExtensions{
         XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
+        XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
+    };
+
+    vector<string> requiredExtensions{
         XR_FB_FACE_TRACKING2_EXTENSION_NAME,
         XR_FB_EYE_TRACKING_SOCIAL_EXTENSION_NAME
     };
+
+    printf("\nExtensions Accessible: \n");
+    for (const XrExtensionProperties& prop  : properties) {
+        printf("%s\n", prop.extensionName);
+    }
+
+    // Check for supported extensions
+    for (const XrExtensionProperties& prop : properties) {
+        auto supported = std::find(supportedExtensions.begin(), supportedExtensions.end(), prop.extensionName);
+        if (supported != supportedExtensions.end()) {
+            extensions.push_back((char*)prop.extensionName);
+        }
+    }
+
+    // Check for required extensions
+    for (string required : requiredExtensions) {
+        auto found = std::find(extensions.begin(), extensions.end(), required);
+        if (found == extensions.end()) {
+            printf("Required feature %s not available.", required.c_str());
+            return RUNTIME_FEATURE_UNAVAILABLE;
+        }
+    }
+
+    printf("\nExtensions Available: \n");
+    for (char* ext : extensions) {
+        printf("%s\n", ext);
+    }
 
     XrResult result = XR_SUCCESS;
 
     XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
     createInfo.next = NULL;
     createInfo.createFlags = 0;
-    createInfo.enabledExtensionCount = requiredExtensions.size();
-    createInfo.enabledExtensionNames = requiredExtensions.data();
+    createInfo.enabledExtensionCount = extensions.size();
+    createInfo.enabledExtensionNames = extensions.data();
     createInfo.enabledApiLayerCount = 0;
     createInfo.applicationInfo.applicationVersion = 1;
     createInfo.applicationInfo.engineVersion = 0;
@@ -85,20 +98,21 @@ int CreateXrSession() {
 
     result = xrCreateInstance(&createInfo, &instance);
     if (result != XR_SUCCESS) {
-        return -2;
+        return INSTANCE_CREATE_FAILURE;
     }
 
-    if (instance == NULL) return -10;
+    if (instance == NULL)
+        return INSTANCE_CREATE_FAILURE;
 
     printf("\nGetting XrSystem: ");
 
-    XrSystemGetInfo systemInfo = {XR_TYPE_SYSTEM_GET_INFO};
+    XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
     systemInfo.next = nullptr;
     systemInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    
+
     result = xrGetSystem(instance, &systemInfo, &systemId);
     if (result != XR_SUCCESS)
-        return -3;
+        return SYSTEM_GET_FAILURE;
 
     printf("\nResolving stereo view.");
 
@@ -124,15 +138,19 @@ int CreateXrSession() {
     if (!bSupportStereoView)
     {
         printf("Does not support stereo view type.");
-        return -4;
+        return STEREO_VIEW_UNSUPPORTED;
     }
 
-     printf("\nBinding graphics: ");
+    printf("\nBinding graphics: ");
 
-    void *gfxBinding = nullptr;
-    qxrCreateGraphicsBind(instance, systemId, &gfxBinding);
+    void* gfxBinding = nullptr;
+    result = qxrCreateGraphicsBind(instance, systemId, &gfxBinding);
+    if (result != XR_SUCCESS) {
+        printf("Failed to bind graphics.");
+        return GRAPHICS_BIND_FAILURE;
+    }
 
-     printf("\nCreating Session: ");
+    printf("\nCreating Session: ");
 
     XrSessionCreateInfo sessionCreateInfo = { XR_TYPE_SESSION_CREATE_INFO };
     sessionCreateInfo.next = gfxBinding;
@@ -141,24 +159,24 @@ int CreateXrSession() {
 
     result = xrCreateSession(instance, &sessionCreateInfo, &session);
     if (result != XR_SUCCESS)
-        return -5;
+        return SESSION_CREATE_FAILURE;
 
     XrReferenceSpaceCreateInfo spaceInfo = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
     spaceInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
 
     XrQuaternionf orientation{ 0.0f, 0.0f, 0.0f, 1.0f };
-	XrVector3f position{ 0.0f, 0.0f,0.0f };
-	spaceInfo.poseInReferenceSpace.orientation = orientation;
-	spaceInfo.poseInReferenceSpace.position = position;
+    XrVector3f position{ 0.0f, 0.0f,0.0f };
+    spaceInfo.poseInReferenceSpace.orientation = orientation;
+    spaceInfo.poseInReferenceSpace.position = position;
 
 
     result = xrCreateReferenceSpace(session, &spaceInfo, &worldSpace);
     if (result != XR_SUCCESS) {
-        printf("DUMB");
-        return -1;
+        printf("Failed to create a reference space.");
+        return SPACE_CREATE_FAILURE;
     }
 
-    return 0;
+    return SUCCESS;
 }
 
 int CloseXrSession() {

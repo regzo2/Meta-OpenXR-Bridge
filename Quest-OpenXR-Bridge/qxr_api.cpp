@@ -9,56 +9,57 @@
 XrFaceExpressionWeights2FB xrExp = { XR_TYPE_FACE_EXPRESSION_WEIGHTS2_FB };
 XrEyeGazesFB xrGazes = { XR_TYPE_EYE_GAZES_FB };
 
-int InitializeSession() {
+qxrResult InitializeSession() {
 	return CreateXrSession();
 }
 
-int CloseSession() {
+bool CloseSession() {
 	XrResult result = xrEndSession(session);
 	return result;
 }
 
-int CreateFaceTracker() {
+bool CreateFaceTracker() {
 	XrResult result = qxrCreateFaceTracker(instance, systemId, session);
-	if (result != XR_SUCCESS)
-		return result;
+	return result == XR_SUCCESS;
 }
 
-int DestroyFaceTracker() {
-	return qxrDestroyFaceTracker(instance);
+bool DestroyFaceTracker() {
+	return qxrDestroyFaceTracker(instance) != XR_SUCCESS;
 }
 
-int GetFaceData(FaceWeightsFB *expressions) {
+bool GetFaceData(FaceWeightsFB *expressions) {
 
 	xrExp.weights = expressions->weights;
 	xrExp.weightCount = XR_FACE_EXPRESSION2_COUNT_FB;
 	xrExp.confidences = expressions->confidences;
 	xrExp.confidenceCount = XR_FACE_CONFIDENCE2_COUNT_FB;
+	xrExp.time = expressions->time;
 
 	XrResult result = qxrUpdateFaceTracker(&xrExp);
 	if (result != XR_SUCCESS)
-		return 0;
+		return false;
 
-	return !xrExp.isValid;
+	return xrExp.isValid;
 }
 
-int CreateEyeTracker() {
-	return qxrCreateEyeTracker(instance, systemId, session, worldSpace);
+bool CreateEyeTracker() {
+	return qxrCreateEyeTracker(instance, systemId, session, worldSpace) == XR_SUCCESS;
 }
 
-int DestroyEyeTracker() {
+bool DestroyEyeTracker() {
 	return qxrDestroyEyeTracker(instance);
 }
 
-int GetEyeData(EyeGazesFB *gazes) {
+bool GetEyeData(EyeGazesFB *gazes) {
 
 	XrResult result = qxrUpdateEyeTracker(&xrGazes);
 	printf("Eye Result: %i", result);
 	if (result != XR_SUCCESS) 
-		return 0;
+		return false;
 	gazes->gaze[0].orientation = xrGazes.gaze[0].gazePose.orientation;
 	gazes->gaze[1].orientation = xrGazes.gaze[1].gazePose.orientation;
-	return -1*(!xrGazes.gaze[0].isValid) | -2*(!xrGazes.gaze[1].isValid);
+	gazes->time = xrGazes.time;
+	return xrGazes.gaze[0].isValid | xrGazes.gaze[1].isValid;
 }
 
 int main() {
@@ -67,18 +68,17 @@ int main() {
 	result = InitializeSession();
 	if (result != 0) {
 		printf("Error creating session");
+		return -1;
 	}
 
 	result = CreateFaceTracker();
 	if (result != 0) {
-		printf("Error creating Face Tracker");
-			return -1;
+		return -1;
 	}
 
 	result = CreateEyeTracker();
 	if (result != 0) {
-		printf("Error creating Eye Tracker");
-			return -1;
+		return -1;
 	}
 
 	FaceWeightsFB expressions{};

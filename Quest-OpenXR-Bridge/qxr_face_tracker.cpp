@@ -17,8 +17,6 @@ XrResult qxrCreateFaceTracker(XrInstance instance, XrSystemId systemId, XrSessio
     printf("\nGetting FT properties from system: \n");
 
     XrSystemFaceTrackingProperties2FB ftProp = { XR_TYPE_SYSTEM_FACE_TRACKING_PROPERTIES2_FB };
-    ftProp.supportsAudioFaceTracking = XR_TRUE;
-    ftProp.supportsVisualFaceTracking = XR_TRUE;
 
     PFN_xrGetSystemProperties pfnGetSystemProperties;
     XrResult result = xrGetInstanceProcAddr(instance, "xrGetSystemProperties", (PFN_xrVoidFunction*)&pfnGetSystemProperties);
