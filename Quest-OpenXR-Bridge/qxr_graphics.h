@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
+#define XR_USE_GRAPHICS_API_OPENGL
 
 #include <d3d11.h>
 #include <openxr/openxr.h>
@@ -25,6 +26,6 @@ enum qxrGraphicsType {
 };
 
 XrResult qxrCreateGraphicsBind(XrInstance instance, XrSystemId systemId, void **xrGraphicsBinder);
-bool qxrFreeGraphicsDevice();
+extern bool (*qxrFreeGraphics)();
 
 #endif

@@ -3,16 +3,23 @@
 #define XR_USE_GRAPHICS_API_D3D11
 #endif
 
+#ifndef XR_USE_GRAPHICS_API_OPENGL
+#define XR_USE_GRAPHICS_API_OPENGL
+#endif
+
 #include <d3d11.h>
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <stdio.h>
 
-ID3D11Device* device = NULL;
+bool (*qxrFreeGraphics)();
 
-XrResult qxrCreateGraphicsBind(XrInstance instance, XrSystemId systemId, void **xrGraphicsBinder) {
+bool qxrFreeD3D11Device() {
+    return true;
+}
 
-    if (device != NULL) return XR_SUCCESS;
+
+XrResult qxrCreateD3D11Bind(XrInstance instance, XrSystemId systemId, void **xrGraphicsBinder) {
 
     XrGraphicsBindingD3D11KHR *d3d11Binding = new XrGraphicsBindingD3D11KHR(); // Allocate memory
     d3d11Binding->type = XR_TYPE_GRAPHICS_BINDING_D3D11_KHR;
@@ -41,7 +48,7 @@ XrResult qxrCreateGraphicsBind(XrInstance instance, XrSystemId systemId, void **
         NULL,
         0,
         D3D11_SDK_VERSION,
-        &d3d11Binding->device, // Use device member of d3d11Binding
+        &d3d11Binding->device,
         NULL,
         NULL);
 
@@ -52,14 +59,13 @@ XrResult qxrCreateGraphicsBind(XrInstance instance, XrSystemId systemId, void **
     }
 
     *xrGraphicsBinder = d3d11Binding; // Update pointer value
+    qxrFreeGraphics = &qxrFreeD3D11Device; // point free fcn to free d3d11 device.
 
     return XR_SUCCESS;
 }
 
-bool qxrFreeGraphicsDevice() {
+XrResult qxrCreateGraphicsBind(XrInstance instance, XrSystemId systemId, void** xrGraphicsBinder) {
 
-    if (device == NULL)
-        return false;
-    device->Release();
-    return true;
+    return qxrCreateD3D11Bind(instance, systemId, xrGraphicsBinder);
+
 }
