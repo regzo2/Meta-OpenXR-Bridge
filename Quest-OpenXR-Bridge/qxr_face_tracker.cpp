@@ -5,6 +5,7 @@
 #include "qxr_face_tracker.h"
 #include <stdio.h>
 
+bool faceActive = false;
 XrFaceTracker2FB faceTracker;
 PFN_xrGetFaceExpressionWeights2FB getWeights;
 XrFaceExpressionWeights2FB fbExpressions = {XR_TYPE_FACE_EXPRESSION_WEIGHTS2_FB};
@@ -79,12 +80,16 @@ XrResult qxrCreateFaceTracker(XrInstance instance, XrSystemId systemId, XrSessio
             &getWeights));
     if (result != XR_SUCCESS)
         printf("Failed to create weights PFN");
+
+    faceActive = true;
     return result;
 }
 
 XrFaceExpressionInfo2FB expressionInfo{ XR_TYPE_FACE_EXPRESSION_INFO2_FB };
 
 XrResult qxrUpdateFaceTracker(XrFaceExpressionWeights2FB *expressions) {
+
+    if (!faceActive) return XR_ERROR_INITIALIZATION_FAILED;
 
     XrResult result = getWeights(
         faceTracker,

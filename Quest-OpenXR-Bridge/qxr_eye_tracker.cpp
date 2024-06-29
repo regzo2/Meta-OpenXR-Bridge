@@ -5,6 +5,7 @@
 #include "qxr_eye_tracker.h"
 #include <iostream>
 
+bool eyeActive = false;
 XrEyeTrackerFB eyeTracker;
 PFN_xrGetEyeGazesFB getGazes;
 XrSpace space;
@@ -68,12 +69,15 @@ XrResult qxrCreateEyeTracker(XrInstance instance, XrSystemId systemId, XrSession
 
     space = worldSpace;
 
+    eyeActive = true;
     return result;
 }
 
 XrEyeGazesInfoFB gazesInfo{XR_TYPE_EYE_GAZES_INFO_FB};
 
 XrResult qxrUpdateEyeTracker(XrEyeGazesFB *data) {
+
+     if (!eyeActive) return XR_ERROR_INITIALIZATION_FAILED;
 
     //XrFrameState frameState; // previously returned from xrWaitFrame
     //const XrTime time = frameState.predictedDisplayTime;

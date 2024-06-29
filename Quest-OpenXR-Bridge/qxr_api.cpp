@@ -68,17 +68,16 @@ int main() {
 	result = InitializeSession();
 	if (result != 0) {
 		printf("Error creating session");
-		return -1;
 	}
 
 	result = CreateFaceTracker();
 	if (result != 0) {
-		return -1;
+		printf("Error creating face tracker.");
 	}
 
 	result = CreateEyeTracker();
 	if (result != 0) {
-		return -1;
+		printf("Error creating eye tracker.");
 	}
 
 	FaceWeightsFB expressions{};
@@ -92,6 +91,7 @@ int main() {
 													   gazes.gaze[0].orientation.y, 
 													   gazes.gaze[0].orientation.w, 
 													   gazes.gaze[0].orientation.z);
+		Sleep(100);
 	}
 
 	DestroyEyeTracker();
