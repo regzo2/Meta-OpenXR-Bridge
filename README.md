@@ -1,9 +1,5 @@
 # Meta OpenXR Bridge
->A lightweight wrapper for Meta's OpenXR APIs.
-
-## Features
-* Simple API: Straightforward and easy-to-use API for integrating Meta's OpenXR extensions.
-* Easy Integration: Seamlessly integrate facial and eye tracking functionalities into your applications.
+>A simple wrapper for Meta's OpenXR APIs.
 
 ## Supported OpenXR Features
 Currently, Meta OpenXR Bridge supports the following features:
@@ -14,9 +10,9 @@ Currently, Meta OpenXR Bridge supports the following features:
 ## Usage
 To use Meta OpenXR Bridge:
 
-Call CreateSession(), which attempts to create an OpenXR session with the supported extensions exposed. If the runtime does not support the extensions, it will fail.
-
-After the session successfully is created, you can call other functions provided by Meta OpenXR Bridge to utilize the supported features.
+* Call InitializeSession(), which attempts to create an OpenXR session with the supported extensions exposed. If the runtime does not support the extensions, it will fail.
+* After the session successfully is created, you can call other functions provided by Meta OpenXR Bridge to utilize the supported features.
+* Once you have finished using the API, use the CloseSession() and Destroy functions for graceful closing.
 
 ## To Do
 * Support for Other Graphics APIs: Currently, Meta OpenXR Bridge only supports D3D11. Support for other graphics APIs will be added in the future.
