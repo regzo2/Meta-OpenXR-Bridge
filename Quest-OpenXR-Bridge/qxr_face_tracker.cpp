@@ -55,7 +55,6 @@ XrResult qxrCreateFaceTracker(XrInstance instance, XrSystemId systemId, XrSessio
         printf("Failed to create PFN");
         return result;
     }
-    printf("pizza");
     printf("\nCreating Face Tracker object");
 
     XrFaceTrackerCreateInfo2FB createInfo{ XR_TYPE_FACE_TRACKER_CREATE_INFO2_FB };
@@ -78,8 +77,10 @@ XrResult qxrCreateFaceTracker(XrInstance instance, XrSystemId systemId, XrSessio
         "xrGetFaceExpressionWeights2FB",
         reinterpret_cast<PFN_xrVoidFunction*>(
             &getWeights));
-    if (result != XR_SUCCESS)
+    if (result != XR_SUCCESS) {
         printf("Failed to create weights PFN");
+        return result;
+    }
 
     faceActive = true;
     return result;
