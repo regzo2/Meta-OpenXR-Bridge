@@ -70,20 +70,17 @@ int main() {
 		printf("Error creating session");
 	}
 
-	result = CreateFaceTracker();
-	if (result != 0) {
+	if (!CreateFaceTracker()) {
 		printf("Error creating face tracker.");
 	}
 
-	result = CreateEyeTracker();
-	if (result != 0) {
+	if (!CreateEyeTracker()) {
 		printf("Error creating eye tracker.");
 	}
 
 	FaceWeightsFB expressions{};
 	EyeGazesFB gazes{};
 
-	while (1) {
 		printf("\nFaceGet: %i", (int)GetFaceData(&expressions));
 		printf("\nResult: JawDrop: %f", expressions.weights[XR_FACE_EXPRESSION2_JAW_DROP_FB]);
 		printf("\nEyeGet: %i", (int)GetEyeData(&gazes));
@@ -91,9 +88,7 @@ int main() {
 													   gazes.gaze[0].orientation.y, 
 													   gazes.gaze[0].orientation.w, 
 													   gazes.gaze[0].orientation.z);
-		Sleep(100);
-	}
-
+	
 	DestroyEyeTracker();
 	DestroyFaceTracker();
 
