@@ -40,7 +40,7 @@ qxrResult CreateXrSession() {
 
     vector<string> supportedExtensions{
         XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
-        XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
+        //XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
     };
 
     vector<string> requiredExtensions{
@@ -55,18 +55,22 @@ qxrResult CreateXrSession() {
 
     // Check for supported extensions
     for (const XrExtensionProperties& prop : properties) {
-        auto supported = std::find(supportedExtensions.begin(), supportedExtensions.end(), prop.extensionName);
-        if (supported != supportedExtensions.end()) {
+        if (std::find(supportedExtensions.begin(), supportedExtensions.end(), (char*)prop.extensionName) != supportedExtensions.end()) {
+            extensions.push_back((char*)prop.extensionName);
+        }
+        if (std::find(requiredExtensions.begin(), requiredExtensions.end(), (char*)prop.extensionName) != supportedExtensions.end()) {
             extensions.push_back((char*)prop.extensionName);
         }
     }
 
     // Check for required extensions
-    for (string required : requiredExtensions) {
-        auto found = std::find(extensions.begin(), extensions.end(), required);
-        if (found == extensions.end()) {
-            printf("Required feature %s not available.", required.c_str());
-            return RUNTIME_FEATURE_UNAVAILABLE;
+    for (const std::string& required : requiredExtensions) {
+        if (std::find(extensions.begin(), extensions.end(), required) == extensions.end()) {
+            printf("Required feature %s not available.\n", required.c_str());
+            //return RUNTIME_FEATURE_UNAVAILABLE;
+        }
+        else {
+            printf("Required feature %s IS available.\n", required.c_str());
         }
     }
 
